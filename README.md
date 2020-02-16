@@ -33,7 +33,7 @@ http://xxxxxxx/Nest.php?
 	setAway=On|Off 					- set Away mode On or Off
 	debug=1 						- display debug mode
 
-Initial setupe :
+Initial setup :
 ----------------
 Install this .php, together with the .ini and the nest.class.php, in the same sub-directory of your web folder of your web server
 The name of the .ini file must be the same as the one of this .php file.
