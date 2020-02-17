@@ -43,6 +43,7 @@ Initial setup :
 Install this .php, together with the .ini and the nest.class.php, in the same sub-directory of your web folder of your web server
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
+Validated with PHP 7.0 (if PHP >= 7.2, then errors) on a NAS Synology.
 */
 $CodeVersion = "v01.02";
 
