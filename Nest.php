@@ -11,6 +11,7 @@ The purpose of this php is to interract with the the Nest Learning thermostat
 		- target temperature
 		- eco temperature
 		- target mode
+		- heating Yes/No
 		- away mode
 	- set  the mahor settings
 		- target emperature
@@ -22,6 +23,7 @@ https://github.com/gboudreau/nest-api
 Version history :
 -----------------
 v01.01 by Jojo 		(15/02/2020)	: initial version
+v01.02 by Jojo 		(17/02/2020)	: heating info
 
 Syntax :
 --------
@@ -37,12 +39,12 @@ http://xxxxxxx/Nest.php?
 	debug=1 						- display debug mode
 
 Initial setup :
-----------------
+---------------
 Install this .php, together with the .ini and the nest.class.php, in the same sub-directory of your web folder of your web server
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v01.01";
+$CodeVersion = "v01.02";
 
 // INITIALISATION
 // ---------------
@@ -115,7 +117,7 @@ if ($debug) {echo "<br>";}
 	[backplate_temperature] => 20.73999 
 	[humidity] => 42 
 	[ac] => 
-	[heat] => 1 
+	[heat] =>   | 1 (""|1 if is heating) 
 	[alt_heat] => 
 	[fan] => 
 	[hot_water] => 
@@ -170,6 +172,12 @@ echo "<u>Current setting : </u><br>";
 if ($read == NULL or $read == 'temperature') {
 	// Current temperature
 	echo "<i>Current temperature : </i>".$infos->current_state->temperature."°".$infos->scale."<br>";
+	echo "<i>Is heating : </i>";
+	if ($infos->current_state->heat == "") {
+		echo "No<br>";
+	} else {
+		echo "Yes<br>";
+	}
 }
 if ($read == NULL or $read == 'humidity') {
 	// Current humidity
@@ -178,7 +186,7 @@ if ($read == NULL or $read == 'humidity') {
 if ($read == NULL or $read == 'target') {
 	// Target temperature
 	echo "<i>Target temperature : </i>".$infos->target->temperature."°".$infos->scale."<br>";
-	echo "<i>Time to target temperature : </i>".$infos->target->time_to_target."<br>";
+//	echo "<i>Time to target temperature : </i>".$infos->target->time_to_target."<br>";
 }
 if ($read == NULL or $read == 'eco') {
 	// Eco temperature
