@@ -9,6 +9,7 @@ The purpose of this php is to interract with the the Nest Learning thermostat
 		- eco temperature
 		- target mode
 		- heating Yes/No
+		- heating Yes/No
 		- away mode
 	- set  the mahor settings
 		- target emperature
