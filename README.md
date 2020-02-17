@@ -8,6 +8,7 @@ The purpose of this php is to interract with the the Nest Learning thermostat
 		- target temperature
 		- eco temperature
 		- target mode
+		- heating Yes/No
 		- away mode
 	- set  the mahor settings
 		- target emperature
@@ -19,6 +20,7 @@ https://github.com/gboudreau/nest-api
 Version history :
 -----------------
 v01.01 by Jojo 		(15/02/2020)	: initial version
+v01.02 by Jojo 		(17/02/2020)	: heating info
 
 Syntax :
 --------
