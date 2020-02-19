@@ -24,6 +24,7 @@ Version history :
 -----------------
 v01.01 by Jojo 		(15/02/2020)	: initial version
 v01.02 by Jojo 		(17/02/2020)	: heating info
+v01.03 by Jojo		(20/02/2020)	: optimisation of .ini file upload
 
 Syntax :
 --------
@@ -45,15 +46,15 @@ The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 Validated with PHP 7.0 (if PHP >= 7.2, then errors) on a NAS Synology.
 */
-$CodeVersion = "v01.02";
+$CodeVersion = "v01.03";
 
 // INITIALISATION
 // ---------------
 
 // from .ini file (.ini file mut have the same name as the running script)
 $ini_array = parse_ini_file(substr(basename($_SERVER['SCRIPT_NAME']).PHP_EOL, 0, -4)."ini");
-$issue_token = $ini_array[issue_token];
-$cookies = $ini_array[cookies];
+$issue_token = $ini_array['issue_token'];
+$cookies = $ini_array['cookies'];
 
 // auto configuration
 $ip = $_SERVER['SERVER_ADDR']; 					// IP-Adress of your Web server hosting this script
@@ -77,12 +78,16 @@ require_once('nest.class.php');
 $nest = new Nest(NULL, NULL, $issue_token, $cookies);
 
 // Debug Alert
-if ($debug) {echo ("Nest php code version: ".$CodeVersion."<br>");}
 if ($debug) {echo "<hr>DEBUG ENABLED<br>!!!!do not use debug parameter WHEN CODE IS IN PRODUCTION !!!!<hr>";}
-if ($debug) {echo "read = -".$read."-<br>";}
-if ($debug) {echo "setTmp = -".$setTmp."-<br>";}
-if ($debug) {echo "setAway = -".$setAway."-<br>";}
-if ($debug) {echo "<br>";}
+if ($debug) {
+	echo "read = -".$read."-<br>";
+	echo "setTmp = -".$setTmp."-<br>";
+	echo "setAway = -".$setAway."-<br>";
+	echo "<hr>";
+	echo "App Version : ".$CodeVersion."<br>";
+	echo "PHP Version : ".phpversion()."<br>";
+	echo "<hr>";
+}
 // --------------------------------------------------------------------------
 
 // actions
