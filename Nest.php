@@ -9,6 +9,7 @@ The purpose of this php is to interract with the the Nest Learning thermostat
 		- current temperature
 		- current humidity
 		- target temperature
+		- target temperature reached at
 		- eco temperature
 		- target mode
 		- heating Yes/No
@@ -22,9 +23,12 @@ https://github.com/gboudreau/nest-api
 
 Version history :
 -----------------
-v01.01 by Jojo 		(15/02/2020)	: initial version
-v01.02 by Jojo 		(17/02/2020)	: heating info
-v01.03 by Jojo		(20/02/2020)	: optimisation of .ini file upload
+v01.1 by Jojo 		(15/02/2020)	: initial version
+v01.2 by Jojo 		(17/02/2020)	: heating info
+v01.3 by Jojo		(20/02/2020)	: optimisation of .ini file upload
+v01.4 by Jojo		(24/02/2020)	: display temperatures with one digit
+									  auto-refresh the page
+									  target temperature reached at
 
 Syntax :
 --------
@@ -45,7 +49,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v01.03";
+$CodeVersion = "v01.4";
 
 // INITIALISATION
 // ---------------
@@ -54,6 +58,7 @@ $CodeVersion = "v01.03";
 $ini_array = parse_ini_file(substr(basename($_SERVER['SCRIPT_NAME']).PHP_EOL, 0, -4)."ini");
 $issue_token = $ini_array['issue_token'];
 $cookies = $ini_array['cookies'];
+$refresh = $ini_array['refresh'];
 
 // auto configuration
 $ip = $_SERVER['SERVER_ADDR']; 					// IP-Adress of your Web server hosting this script
@@ -93,6 +98,8 @@ if ($debug) {
 if ($setTmp != NULL) {
 	$success = $nest->setTargetTemperature((float) $setTmp);
 	if ($debug) {
+		// Get the device information:
+		$infos = $nest->getDeviceInfo();
 		echo "setTmp to ".$setTmp."°".$infos->scale." - success : ".$success."<br>";
 	}
 }
@@ -109,11 +116,13 @@ if ($setAway != NULL) {
 // Get the device information:
 $infos = $nest->getDeviceInfo();
 // display $infos raw content for dev purpose
-if ($debug) {print_r($infos);}
-if ($debug) {echo "<br>";}
-if ($debug) {echo "<br>";}
-if ($debug) {var_dump($infos);}
-if ($debug) {echo "<br>";}
+if ($debug) {
+	print_r($infos);
+	echo "<br>";
+	echo "<br>";
+	var_dump($infos);
+	echo "<br>";
+}
 
 /* strucutre de $infos
 [current_state] => stdClass Object 
@@ -172,11 +181,13 @@ if ($debug) {echo "<br>";}
 [auto_heat] => 19 
 [where] => Séjour ) 
 */
-echo "<br><b><hr>".$infos->name." - ".$infos->where."</b><hr><br>";
+echo("<meta http-equiv='refresh' content='".$refresh."'>"); //Refresh by HTTP META
+
+echo "<br><hr>".$infos->name." - ".$infos->where."</b><hr><br>";
 echo "<u>Current setting : </u><br>";
 if ($read == NULL or $read == 'temperature') {
 	// Current temperature
-	echo "<i>Current temperature : </i>".$infos->current_state->temperature."°".$infos->scale."<br>";
+	echo "<i>Current temperature : </i>".number_format($infos->current_state->temperature,1)."°".$infos->scale."<br>";
 	echo "<i>Is heating : </i>";
 	if ($infos->current_state->heat == "") {
 		echo "No<br>";
@@ -189,17 +200,35 @@ if ($read == NULL or $read == 'humidity') {
 	echo "<I>Current humidity : </i>".$infos->current_state->humidity."%<br>";
 }
 if ($read == NULL or $read == 'target') {
+	echo "<br>";
 	// Target temperature
-	echo "<i>Target temperature : </i>".$infos->target->temperature."°".$infos->scale."<br>";
-//	echo "<i>Time to target temperature : </i>".$infos->target->time_to_target."<br>";
-}
-if ($read == NULL or $read == 'eco') {
-	// Eco temperature
-	echo "<i>Eco temperature : </i>".$infos->current_state->eco_temperatures->low."°".$infos->scale."<br>";
+	echo "<i>Target temperature : </i>".number_format($infos->target->temperature,1)."°".$infos->scale."<br>";
+	if ($infos->current_state->heat == 1) {
+		if ($infos->target->time_to_target == 0) {
+			$date_target = "Unknown";
+			$duration_target = "Unknown";
+		} else {
+			$duration = ($infos->target->time_to_target - time());
+//			$now = date_create();
+//			$now = time();
+			$date = date_create();
+			// echo date_format($date, 'U = Y-m-d H:i:s') . "<br>"; // =now
+			date_timestamp_set($date, $infos->target->time_to_target);
+			$date_target = date_format($date, 'H:i');
+			$duration_target = date_format($duration, 'H:i');
+		}
+		echo "<i>Target temperature reached at : </i>".$date_target."<br>";
+//		echo "<i>Duration to target temperature : </i>".$duration_target."<br>";
+	}          
 }
 if ($read == NULL or $read == 'mode') {
 	// Target mode
 	echo "<i>Target mode : </i>".$infos->target->mode."<br>";
+}
+if ($read == NULL or $read == 'eco') {
+	echo "<br>";
+	// Eco temperature
+	echo "<i>Eco temperature : </i>".number_format($infos->current_state->eco_temperatures->low,1)."°".$infos->scale."<br>";
 }
 if ($read == NULL or $read == 'away') {
 	// Away mode
@@ -288,7 +317,7 @@ echo "<br>";
 // other infos
 if ($debug) {
 	echo "<br><u>Other infos : </u><br>";
-	/*
+
 	echo "<i>Device schedule : </i><br>";
 	// Returns as array, one element for each day of the week for which there has at least one scheduled event.
 	// Array keys are a textual representation of a day, three letters, as returned by `date('D')`. Array values are arrays of scheduled temperatures, including a time (in minutes after midnight), and a mode (one of the TARGET_TEMP_MODE_* defines).
@@ -308,7 +337,6 @@ if ($debug) {
 	echo print_r($energy_report);
 	echo "<br>";
 	echo "<br>";
-	*/
 
 	echo "<i>Device schedule : </i><br>";
 	// Returns as array, one element for each day of the week for which there has at least one scheduled event.
