@@ -33,6 +33,7 @@ v02.1 by Jojo		(07/03/2020)	: send read info to domotic box
 									  remove useless read parameter
 									  cancel refresh if action
 									  code optimisation
+v02.2 by sud-domotique-expert		: send target mode to box
 
 Syntax :
 --------
@@ -48,7 +49,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v02.1";
+$CodeVersion = "v02.2";
 
 // INITIALISATION
 // ---------------
@@ -157,7 +158,7 @@ if ($debug) {
 	[auto_away] => -1 
 	[manual_away] =>  | 1
 	[structure_away] =>   | 1
-	[leaf] => 
+	[leaf] =>   | 1 (""|1 if eco leaf)
 	[battery_level] => 3.954 
 	[active_stages] => stdClass Object 
 		[heat] => stdClass Object 
