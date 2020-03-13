@@ -34,6 +34,7 @@ v02.1 by Jojo		(07/03/2020)	: send read info to domotic box
 									  cancel refresh if action
 									  code optimisation
 v02.2 by sud-domotique-expert		: send target mode to box
+v02.3 by Jojo		(13/03/2020)	: isEco / leaf ?
 
 Syntax :
 --------
@@ -49,7 +50,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v02.2";
+$CodeVersion = "v02.3";
 
 // INITIALISATION
 // ---------------
@@ -275,6 +276,18 @@ echo "<u>Current setting : </u><br>";
 	// Eco temperature
 	echo "<br>";
 	echo "<i>Eco temperature : </i>".number_format($infos->current_state->eco_temperatures->low,1)."°".$infos->scale."<br>";
+ 
+ 	// Eco mode / leaf
+	echo "<i>Is Eco : </i>";
+	if ($infos->current_state->leaf == "") {
+		echo "No<br>";
+	} else {
+		echo "Yes<br>";
+	}
+	if ($Box_IP) {		// transfert to domotic box
+		$http = $Box_url."isEco=".$infos->current_state->leaf;
+		curl ($http);
+	}
 
 	// Away mode
 	echo "<i>Away mode : </i>";
