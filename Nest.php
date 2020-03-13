@@ -267,7 +267,11 @@ echo "<u>Current setting : </u><br>";
 
 	// Target mode
 	echo "<i>Target mode : </i>".$infos->target->mode."<br>";
-
+ 	if ($Box_IP) {        // transfert to domotic box
+        $http = $Box_url."targetMode=".$infos->target->mode;
+        curl ($http);
+     }
+     
 	// Eco temperature
 	echo "<br>";
 	echo "<i>Eco temperature : </i>".number_format($infos->current_state->eco_temperatures->low,1)."°".$infos->scale."<br>";
