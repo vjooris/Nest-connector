@@ -35,6 +35,7 @@ v02.1 by Jojo		(07/03/2020)	: send read info to domotic box
 									  code optimisation
 v02.2 by sud-domotique-expert		: send target mode to box
 v02.3 by Jojo		(13/03/2020)	: isEco / leaf ?
+v02.4 by sud-domotique-expert		: send Nest name & where to box
 
 Syntax :
 --------
@@ -50,7 +51,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v02.3";
+$CodeVersion = "v02.4";
 
 // INITIALISATION
 // ---------------
@@ -206,6 +207,13 @@ if ($refresh <= 998) {
 	echo("<meta http-equiv='refresh' content='".$refresh."'>"); //Refresh by HTTP META
 }
 echo "<br><hr>".$infos->name." - ".$infos->where."</b><hr><br>";
+	if ($Box_IP) {        // transfert to domotic box
+        $http = $Box_url."name=".$infos->name;
+        curl ($http);
+        $http = $Box_url."where=".$infos->where;
+        curl ($http);
+    }
+    
 echo "<u>Current setting : </u><br>";
 	// Current temperature
 	echo "<i>Current temperature : </i>".number_format($infos->current_state->temperature,1)."°".$infos->scale."<br>";
