@@ -36,6 +36,7 @@ v02.1 by Jojo		(07/03/2020)	: send read info to domotic box
 v02.2 by sud-domotique-expert		: send target mode to box
 v02.3 by Jojo		(13/03/2020)	: isEco / leaf ?
 v02.4 by sud-domotique-expert		: send Nest name & where to box
+v02.5 by Jojo		(14/03/2020)	: autorefresh box if setTmp or setAway
 
 Syntax :
 --------
@@ -51,7 +52,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v02.4";
+$CodeVersion = "v02.5";
 
 // INITIALISATION
 // ---------------
@@ -122,6 +123,11 @@ if ($setTmp != NULL) {
 		$infos = $nest->getDeviceInfo();
 		echo "setTmp to ".$setTmp."°".$infos->scale." - success : ".$success."<br>";
 	}
+	if ($Box_IP) {		// refresh if box
+		$infos = $nest->getDeviceInfo();
+		$http = $Box_url."setTmp=".number_format($infos->target->temperature,1);
+		curl ($http);
+	}
 	exit();
 }
 if ($setAway != NULL) {
@@ -132,6 +138,18 @@ if ($setAway != NULL) {
 	}
 	if ($debug) {
 		echo "setAway to ".$setAway." - success : ".$success."<br>";
+	}
+	if ($Box_IP) {		// refresh if box
+		sleep (5);
+		$infos = $nest->getDeviceInfo();
+		$http = $Box_url."setAway=".$infos->current_state->manual_away;
+		curl ($http);
+		$http = $Box_url."setTmp=".number_format($infos->target->temperature,1);
+		curl ($http);
+		$http = $Box_url."isHeating=".$infos->current_state->heat;
+		curl ($http);
+		$http = $Box_url."isEco=".$infos->current_state->leaf;
+		curl ($http);
 	}
 	exit();
 }
