@@ -453,6 +453,10 @@ class Nest
                     'low' => ($this->last_status->device->{$serial_number}->away_temperature_low_enabled) ? $this->temperatureInUserScale((float)$this->last_status->device->{$serial_number}->away_temperature_low) : FALSE,
                     'high' => ($this->last_status->device->{$serial_number}->away_temperature_high_enabled) ? $this->temperatureInUserScale((float)$this->last_status->device->{$serial_number}->away_temperature_high) : FALSE,
                 ),
+                'safety_temperatures' => (object) array(
+                    'lower' => ($this->last_status->device->{$serial_number}->lower_safety_temp_enabled) ? $this->temperatureInUserScale((float)$this->last_status->device->{$serial_number}->lower_safety_temp) : FALSE,
+                    'upper' => ($this->last_status->device->{$serial_number}->upper_safety_temp_enabled) ? $this->temperatureInUserScale((float)$this->last_status->device->{$serial_number}->upper_safety_temp) : FALSE,
+                ),
             ),
             'target' => (object) array(
                 'mode' => $target_mode,
@@ -628,6 +632,36 @@ class Nest
         } elseif ($temp_high != NULL) {
             $data['away_temperature_high_enabled'] = TRUE;
             $data['away_temperature_high'] = $temp_high;
+        }
+        $data = json_encode($data);
+        return $this->doPOST("/v2/put/device." . $serial_number, $data);
+    }
+
+    /**
+     * Change the thermostat safety temperatures.
+     *
+     * @param float|bool $temp_low      Safety low temperature. Use FALSE to turn it Off (not recommended)
+     * @param float|bool $temp_high     Safety high temperature. Use FALSE to turn it Off (not recommended)
+     * @param string     $serial_number The thermostat serial number. Defaults to the first device of the account.
+     *
+     * @return stdClass|bool The object returned by the API call, or FALSE on error.
+     */
+    public function setSafetyTemperatures($temp_low, $temp_high, $serial_number = NULL) {
+        $serial_number = $this->getDefaultSerial($serial_number);
+        $temp_low = $this->temperatureInCelsius($temp_low, $serial_number);
+        $temp_high = $this->temperatureInCelsius($temp_high, $serial_number);
+        $data = array();
+        if ($temp_low === FALSE) {
+            $data['lower_safety_temp_enabled'] = FALSE;
+        } elseif ($temp_low != NULL) {
+            $data['lower_safety_temp_enabled'] = TRUE;
+            $data['lower_safety_temp'] = $temp_low;
+        }
+        if ($temp_high === FALSE) {
+            $data['upper_safety_temp_enabled'] = FALSE;
+        } elseif ($temp_high != NULL) {
+            $data['upper_safety_temp_enabled'] = TRUE;
+            $data['upper_safety_temp'] = $temp_high;
         }
         $data = json_encode($data);
         return $this->doPOST("/v2/put/device." . $serial_number, $data);
@@ -1391,3 +1425,4 @@ class Nest
         rename($temp, $fname);
     }
 }
+?>

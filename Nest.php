@@ -16,6 +16,7 @@ The purpose of this php is to interract with the the Nest Learning thermostat
 		- away mode
 	- set  the mahor settings
 		- target emperature
+		- eco temperature
 		- away mode
 
 This development is based on the PHP class developped by gboudreau :
@@ -37,13 +38,20 @@ v02.2 by sud-domotique-expert		: send target mode to box
 v02.3 by Jojo		(13/03/2020)	: isEco / leaf ?
 v02.4 by sud-domotique-expert		: send Nest name & where to box
 v02.5 by Jojo		(14/03/2020)	: autorefresh box if setTmp or setAway
+v03.1 by Jojo		(15/03/2020)	: set Eco temperature
+									  display Safety/Emergency/anti-freeze status
+									  display Safety/Emergency/anti-freeze temperature
+									  set Safety/Emergency/anti-freeze temperature
+
 
 Syntax :
 --------
 http://xxxxxxx/Nest.php
 	if no parameter 				- read all possible values
 	?setTmp=xx.x 					- set target temperature to xx.x °C
-	?setAway=On|Off 					- set Away mode On or Off
+	?setAway=On|Off 				- set Away mode On or Off
+	?setEco=xx.x 					- set Eco temperature to xx.x °C
+	?setSafety=xx.x 				- set Safety/Emergency/anti-freeze temperature to xx.x °C
 	?debug=1 						- display debug mode
 
 Initial setup :
@@ -52,7 +60,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v02.5";
+$CodeVersion = "v03.1";
 
 // INITIALISATION
 // ---------------
@@ -77,6 +85,8 @@ $file = $_SERVER['PHP_SELF'];  					// path & file name of this running php scri
 
 // URL parameters
 $setTmp = $_GET['setTmp'];
+$setEco = $_GET['setEco'];
+$setSafety = $_GET['setSafety'];
 $setAway = $_GET['setAway'];
 // if parameter specified, use the specified one
 if ($_GET["debug"] != NULL) {$debug = 1;}
@@ -123,12 +133,26 @@ if ($setTmp != NULL) {
 		$infos = $nest->getDeviceInfo();
 		echo "setTmp to ".$setTmp."°".$infos->scale." - success : ".$success."<br>";
 	}
-	if ($Box_IP) {		// refresh if box
+	// refreshBox($nest, $Box_url);
+	refreshBox();
+}
+if ($setEco != NULL) {
+	$success = $nest->setEcoTemperatures((float) $setEco, 0);
+	if ($debug) {
+		// Get the device information:
 		$infos = $nest->getDeviceInfo();
-		$http = $Box_url."setTmp=".number_format($infos->target->temperature,1);
-		curl ($http);
+		echo "setEco to ".$setEco."°".$infos->scale." - success : ".$success."<br>";
 	}
-	exit();
+	refreshBox();
+}
+if ($setSafety != NULL) {
+	$success = $nest->setSafetyTemperatures((float) $setSafety, 0);
+	if ($debug) {
+		// Get the device information:
+		$infos = $nest->getDeviceInfo();
+		echo "setEco to ".$setEco."°".$infos->scale." - success : ".$success."<br>";
+	}
+	refreshBox();
 }
 if ($setAway != NULL) {
 	if ($setAway == "On") {
@@ -139,19 +163,7 @@ if ($setAway != NULL) {
 	if ($debug) {
 		echo "setAway to ".$setAway." - success : ".$success."<br>";
 	}
-	if ($Box_IP) {		// refresh if box
-		sleep (5);
-		$infos = $nest->getDeviceInfo();
-		$http = $Box_url."setAway=".$infos->current_state->manual_away;
-		curl ($http);
-		$http = $Box_url."setTmp=".number_format($infos->target->temperature,1);
-		curl ($http);
-		$http = $Box_url."isHeating=".$infos->current_state->heat;
-		curl ($http);
-		$http = $Box_url."isEco=".$infos->current_state->leaf;
-		curl ($http);
-	}
-	exit();
+	refreshBox();
 }
 // Get the device information:
 $infos = $nest->getDeviceInfo();
@@ -198,6 +210,9 @@ if ($debug) {
 	[eco_temperatures] => stdClass Object
 		[low] => 16.15352 
 		[high] => 
+	[safety_temperatures] => stdClass Object
+		[lower] => 4.6118565
+		[upper] => 
 [target] => stdClass Object
 	[mode] => heat | off
 	[temperature] => 21 
@@ -231,7 +246,9 @@ echo "<br><hr>".$infos->name." - ".$infos->where."</b><hr><br>";
         $http = $Box_url."where=".$infos->where;
         curl ($http);
     }
-    
+  
+// echo "emergencyTemperature : ".$infos->current_state->emergencyTemperature."-<br>";
+
 echo "<u>Current setting : </u><br>";
 	// Current temperature
 	echo "<i>Current temperature : </i>".number_format($infos->current_state->temperature,1)."°".$infos->scale."<br>";
@@ -286,22 +303,38 @@ echo "<u>Current setting : </u><br>";
 	if ($Box_IP) {		// transfert to domotic box
 		$http = $Box_url."hourTarget=".$date_target;
 		curl ($http);
-     }
- 	if ($Box_IP) {		// transfert to domotic box
 		$http = $Box_url."durationTarget=".$duration_target;
 		curl ($http);
-     }    
+    }    
 
 	// Target mode
 	echo "<i>Target mode : </i>".$infos->target->mode."<br>";
  	if ($Box_IP) {        // transfert to domotic box
         $http = $Box_url."targetMode=".$infos->target->mode;
         curl ($http);
-     }
+    }
+
+	// Away mode
+	echo "<br>";
+	echo "<i>Away mode : </i>";
+	if ($infos->current_state->manual_away == "") {
+		echo "Present<br>";
+	} else { 
+		echo "Away<br>";
+	}
+	if ($Box_IP) {		// transfert to domotic box
+		$http = $Box_url."setAway=".$infos->current_state->manual_away;
+		curl ($http);
+	}
      
 	// Eco temperature
+	// possible values in app : 5 to 21 °C
 	echo "<br>";
 	echo "<i>Eco temperature : </i>".number_format($infos->current_state->eco_temperatures->low,1)."°".$infos->scale."<br>";
+	if ($Box_IP) {		// transfert to domotic box
+		$http = $Box_url."ecoTmp=".number_format($infos->current_state->eco_temperatures->low,1);
+		curl ($http);
+	}
  
  	// Eco mode / leaf
 	echo "<i>Is Eco : </i>";
@@ -315,20 +348,37 @@ echo "<u>Current setting : </u><br>";
 		curl ($http);
 	}
 
-	// Away mode
-	echo "<i>Away mode : </i>";
-	if ($infos->current_state->manual_away == "") {
-		echo "Present<br>";
-	} else { 
-		echo "Away<br>";
+	// Safety temperature
+	// possible values in app : 2 to 7 °C
+	echo "<br>";
+	echo "<i>Safety temperature : </i>".number_format($infos->current_state->safety_temperatures->lower,1)."°".$infos->scale."<br>";
+	if ($Box_IP) {		// transfert to domotic box
+		$http = $Box_url."safetyTmp=".number_format($infos->current_state->safety_temperatures->lower,1);
+		curl ($http);
+	}
+ 	// Safety mode
+	echo "<i>Is Safety : </i>";
+	if ($infos->current_state->active_stages->emergency == "") {
+		echo "No<br>";
+	} else {
+		echo "Yes<br>";
 	}
 	if ($Box_IP) {		// transfert to domotic box
-		$http = $Box_url."setAway=".$infos->current_state->manual_away;
+		$http = $Box_url."isSafety=".$infos->current_state->active_stages->emergency ;
 		curl ($http);
 	}
 
 
 echo "<br><u>Possible actions : </u><br>";
+	// setAway
+	echo "<i>Set Away mode to : </i>";
+	if ($infos->current_state->manual_away == "") {
+		echo "<a href=http://".$ip.$file."?setAway=On".$ActionUrl." target='_blank'>Away</a>";
+	} else {
+		echo "<a href=http://".$ip.$file."?setAway=Off".$ActionUrl." target='_blank'>Present</a>";
+	}
+	echo "<br>";
+
 	// setTmp
 	echo "<i>Set the target temperature to : </i><br>";
 	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
@@ -361,14 +411,65 @@ echo "<br><u>Possible actions : </u><br>";
 	echo "<a href=http://".$ip.$file."?setTmp=26.5".$ActionUrl." target='_blank'>26.5</a> ";
 	echo "°".$infos->scale."<br>";
 
-	// setAway
-	echo "<i>Set Away mode to : </i>";
-	if ($infos->current_state->manual_away == "") {
-		echo "<a href=http://".$ip.$file."?setAway=On".$ActionUrl." target='_blank'>Away</a>";
-	} else {
-		echo "<a href=http://".$ip.$file."?setAway=Off".$ActionUrl." target='_blank'>Present</a>";
-	}
-	echo "<br>";
+	// setEco
+	echo "<i>Set the Eco temperature to : </i><br>";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "<a href=http://".$ip.$file."?setEco=5".$ActionUrl." target='_blank'>5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=5.5".$ActionUrl." target='_blank'>5.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=6".$ActionUrl." target='_blank'>6</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=6.5".$ActionUrl." target='_blank'>6.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=7".$ActionUrl." target='_blank'>7</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=7.5".$ActionUrl." target='_blank'>7.5</a><br>";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "<a href=http://".$ip.$file."?setEco=8".$ActionUrl." target='_blank'>8</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=8.5".$ActionUrl." target='_blank'>8.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=9".$ActionUrl." target='_blank'>9</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=9.5".$ActionUrl." target='_blank'>9.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=10".$ActionUrl." target='_blank'>10</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=10.5".$ActionUrl." target='_blank'>10.5</a><br>";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "<a href=http://".$ip.$file."?setEco=11".$ActionUrl." target='_blank'>11</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=11.5".$ActionUrl." target='_blank'>11.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=12".$ActionUrl." target='_blank'>12</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=12.5".$ActionUrl." target='_blank'>12.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=13".$ActionUrl." target='_blank'>13</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=13.5".$ActionUrl." target='_blank'>13.5</a><br>";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "<a href=http://".$ip.$file."?setEco=14".$ActionUrl." target='_blank'>14</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=14.5".$ActionUrl." target='_blank'>14.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=15".$ActionUrl." target='_blank'>15</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=15.5".$ActionUrl." target='_blank'>15.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=16".$ActionUrl." target='_blank'>16</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=16.5".$ActionUrl." target='_blank'>16.5</a><br>";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "<a href=http://".$ip.$file."?setEco=17".$ActionUrl." target='_blank'>17</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=17.5".$ActionUrl." target='_blank'>17.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=18".$ActionUrl." target='_blank'>18</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=18.5".$ActionUrl." target='_blank'>18.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=19".$ActionUrl." target='_blank'>19</a> - ";
+	echo "<a href=http://".$ip.$file."?setEco=19.5".$ActionUrl." target='_blank'>19.5</a> ";
+	echo "°".$infos->scale."<br>";
+
+	// setSafety
+	echo "<i>Set the Safety temperature to : </i><br>";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "<a href=http://".$ip.$file."?setSafety=2".$ActionUrl." target='_blank'>2</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=2.5".$ActionUrl." target='_blank'>2.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=3".$ActionUrl." target='_blank'>3</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=3.5".$ActionUrl." target='_blank'>3.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=4".$ActionUrl." target='_blank'>4</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=4.55".$ActionUrl." target='_blank'>4.5</a><br>";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "<a href=http://".$ip.$file."?setSafety=5".$ActionUrl." target='_blank'>5</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=5.5".$ActionUrl." target='_blank'>5.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=6".$ActionUrl." target='_blank'>6</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=6.5".$ActionUrl." target='_blank'>6.5</a> - ";
+	echo "<a href=http://".$ip.$file."?setSafety=7".$ActionUrl." target='_blank'>7</a> ";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "&nbsp&nbsp&nbsp&nbsp&nbsp";
+	echo "°".$infos->scale."<br>";
 
 // other infos
 if ($debug) {
@@ -425,5 +526,37 @@ function curl($http) {
 	curl_exec($url);
 	curl_close($url);
 	if ($debug) {echo $http."<br>";}
+}
+// function refreshBpx($nest, $Box_url) {
+function refreshBox() {
+	if ($Box_IP) {		// refresh if box
+		$infos = $nest->getDeviceInfo();
+		$http = $Box_url."isHeating=".$infos->current_state->heat;
+		curl ($http);
+		$http = $Box_url."isEco=".$infos->current_state->leaf;
+		curl ($http);
+		// Time & duration to target
+			$date_target = "";
+			if ($infos->current_state->heat == 1) {
+				if ($infos->target->time_to_target == 0) {
+					$date_target = "Unknown";
+					$duration_target = "Unknown";
+				} else {
+					$date = date_create();
+					date_timestamp_set ($date, $infos->target->time_to_target);
+					$date_target = date_format ($date, 'H:i');
+
+					$durationUnix = ($infos->target->time_to_target - time());
+					$duration = date_create();
+					date_timestamp_set ($duration, ($infos->target->time_to_target - time()));
+					$duration_target = date_format ($duration, 'H:i');
+				}
+				$http = $Box_url."hourTarget=".$date_target;
+				curl ($http);
+				$http = $Box_url."durationTarget=".$duration_target;
+				curl ($http);
+		    } 
+	}
+	exit();
 }
 ?>
