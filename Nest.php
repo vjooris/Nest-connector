@@ -42,6 +42,7 @@ v03.1 by Jojo		(15/03/2020)	: set Eco temperature
 									  display Safety/Emergency/anti-freeze status
 									  display Safety/Emergency/anti-freeze temperature
 									  set Safety/Emergency/anti-freeze temperature
+v03.2 by Jojo		(16/03/2020)	: to comply <nest.class.php> changes
 
 
 Syntax :
@@ -60,7 +61,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v03.1";
+$CodeVersion = "v03.2";
 
 // INITIALISATION
 // ---------------
@@ -211,8 +212,8 @@ if ($debug) {
 		[low] => 16.15352 
 		[high] => 
 	[safety_temperatures] => stdClass Object
-		[lower] => 4.6118565
-		[upper] => 
+		[low] => 4.6118565
+		[high] => 
 [target] => stdClass Object
 	[mode] => heat | off
 	[temperature] => 21 
@@ -351,9 +352,9 @@ echo "<u>Current setting : </u><br>";
 	// Safety temperature
 	// possible values in app : 2 to 7 °C
 	echo "<br>";
-	echo "<i>Safety temperature : </i>".number_format($infos->current_state->safety_temperatures->lower,1)."°".$infos->scale."<br>";
+	echo "<i>Safety temperature : </i>".number_format($infos->current_state->safety_temperatures->low,1)."°".$infos->scale."<br>";
 	if ($Box_IP) {		// transfert to domotic box
-		$http = $Box_url."safetyTmp=".number_format($infos->current_state->safety_temperatures->lower,1);
+		$http = $Box_url."safetyTmp=".number_format($infos->current_state->safety_temperatures->low,1);
 		curl ($http);
 	}
  	// Safety mode
