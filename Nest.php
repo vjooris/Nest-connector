@@ -43,7 +43,7 @@ v03.1 by Jojo		(15/03/2020)	: set Eco temperature
 									  display Safety/Emergency/anti-freeze temperature
 									  set Safety/Emergency/anti-freeze temperature
 v03.2 by Jojo		(16/03/2020)	: to comply <nest.class.php> changes
-
+v03.3 by Jojo		(22/03/2020)	: add setTmp, ecoTmp & safetyTmp to refresh()
 
 Syntax :
 --------
@@ -61,7 +61,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v03.2";
+$CodeVersion = "v03.3";
 
 // INITIALISATION
 // ---------------
@@ -531,10 +531,17 @@ function curl($http) {
 // function refreshBpx($nest, $Box_url) {
 function refreshBox() {
 	if ($Box_IP) {		// refresh if box
+		sleep (2);
 		$infos = $nest->getDeviceInfo();
 		$http = $Box_url."isHeating=".$infos->current_state->heat;
 		curl ($http);
 		$http = $Box_url."isEco=".$infos->current_state->leaf;
+		curl ($http);
+		$http = $Box_url."setTmp=".number_format($infos->target->temperature,1);
+		curl ($http);
+		$http = $Box_url."ecoTmp=".number_format($infos->current_state->eco_temperatures->low,1);
+		curl ($http);
+		$http = $Box_url."safetyTmp=".number_format($infos->current_state->safety_temperatures->low,1);
 		curl ($http);
 		// Time & duration to target
 			$date_target = "";
