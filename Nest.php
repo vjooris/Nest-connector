@@ -45,6 +45,8 @@ v03.1 by Jojo		(15/03/2020)	: set Eco temperature
 v03.2 by Jojo		(16/03/2020)	: to comply <nest.class.php> changes
 v03.3 by Jojo		(22/03/2020)	: add setTmp, ecoTmp & safetyTmp to refresh()
 v03.4 by Jojo		(29/03/2020)	: enforce decimal point for temprature sets
+v03.5 by Jojo		(29/03/2020)	: correct bug in refreshBox()
+
 
 Syntax :
 --------
@@ -62,7 +64,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v03.4";
+$CodeVersion = "v03.5";
 
 // INITIALISATION
 // ---------------
@@ -136,8 +138,7 @@ if ($setTmp != NULL) {
 		$infos = $nest->getDeviceInfo();
 		echo "setTmp to ".$setTmp."°".$infos->scale." - success : ".$success."<br>";
 	}
-	// refreshBox($nest, $Box_url);
-	refreshBox();
+	refreshBox($nest, $Box_url);
 }
 if ($setEco != NULL) {
 	$setEco = str_replace (",", ".", $setEco);
@@ -147,7 +148,7 @@ if ($setEco != NULL) {
 		$infos = $nest->getDeviceInfo();
 		echo "setEco to ".$setEco."°".$infos->scale." - success : ".$success."<br>";
 	}
-	refreshBox();
+	refreshBox($nest, $Box_url);
 }
 if ($setSafety != NULL) {
 	$setSafety = str_replace (",", ".", $setSafety);
@@ -157,7 +158,7 @@ if ($setSafety != NULL) {
 		$infos = $nest->getDeviceInfo();
 		echo "setEco to ".$setEco."°".$infos->scale." - success : ".$success."<br>";
 	}
-	refreshBox();
+	refreshBox($nest, $Box_url);
 }
 if ($setAway != NULL) {
 	if ($setAway == "On") {
@@ -168,7 +169,7 @@ if ($setAway != NULL) {
 	if ($debug) {
 		echo "setAway to ".$setAway." - success : ".$success."<br>";
 	}
-	refreshBox();
+	refreshBox($nest, $Box_url);
 }
 // Get the device information:
 $infos = $nest->getDeviceInfo();
@@ -533,8 +534,10 @@ function curl($http) {
 	if ($debug) {echo $http."<br>";}
 }
 // function refreshBpx($nest, $Box_url) {
-function refreshBox() {
-	if ($Box_IP) {		// refresh if box
+function refreshBox($nest, $Box_url) {
+	echo "<br>start function refreshBox<br>";
+	if ($Box_url) {		// refresh if box
+		echo "Box_url : ".$Box_url."<br>";
 		sleep (5);      // in sec
 		$infos = $nest->getDeviceInfo();
 		$http = $Box_url."isHeating=".$infos->current_state->heat;
