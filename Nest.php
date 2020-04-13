@@ -108,7 +108,6 @@ require_once('nest.class.php');
 try {
     $nest = new Nest(NULL, NULL, $issue_token, $cookies);
     // Execute all Nest-related code here
-    echo "ok";
 } catch (UnexpectedValueException $ex) {
     // Happens when the issue_token or cookie is not working, for whatever reason
     $error_message = $ex->getMessage();
