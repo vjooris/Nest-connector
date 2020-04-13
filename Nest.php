@@ -46,7 +46,7 @@ v03.2 by Jojo		(16/03/2020)	: to comply <nest.class.php> changes
 v03.3 by Jojo		(22/03/2020)	: add setTmp, ecoTmp & safetyTmp to refresh()
 v03.4 by Jojo		(29/03/2020)	: enforce decimal point for temprature sets
 v03.5 by Jojo		(29/03/2020)	: correct bug in refreshBox()
-
+v03.6 by Jojo		(13/04/2020)	: catch token error
 
 Syntax :
 --------
@@ -64,7 +64,7 @@ Install this .php, together with the .ini and the nest.class.php, in the same su
 The name of the .ini file must be the same as the one of this .php file.
 Look into the .ini file how to enter your credentials
 */
-$CodeVersion = "v03.5";
+$CodeVersion = "v03.6";
 
 // INITIALISATION
 // ---------------
@@ -104,8 +104,37 @@ if ($debug) {
 
 // load specific PHP class
 require_once('nest.class.php');
-// initialize Nest API
-$nest = new Nest(NULL, NULL, $issue_token, $cookies);
+// initialize Nest API & check if access ok
+try {
+    $nest = new Nest(NULL, NULL, $issue_token, $cookies);
+    // Execute all Nest-related code here
+    echo "ok";
+} catch (UnexpectedValueException $ex) {
+    // Happens when the issue_token or cookie is not working, for whatever reason
+    $error_message = $ex->getMessage();
+	echo "<hr>error tokens : ".$error_message."<hr><br>";
+	if ($Box_IP) {		// transfert to domotic box
+		$http = $Box_url."currentTmp=Tokens!";
+		curl ($http);
+		exit();
+	}
+} catch (RuntimeException $ex) {
+    // Probably a temporary server-error
+    echo "RuntimeException : ".$ex;
+    if ($Box_IP) {		// transfert to domotic box
+		$http = $Box_url."currentTmp=RunTime!";
+		curl ($http);
+		exit();
+	}
+} catch (Exception $ex) {
+    // Other errors; should not happen if it worked in the past
+    echo "Other error : ".$ex;
+    if ($Box_IP) {		// transfert to domotic box
+		$http = $Box_url."currentTmp=Exception!";
+		curl ($http);
+		exit();
+	}
+}
 
 // Debug Alert
 if ($debug) {
