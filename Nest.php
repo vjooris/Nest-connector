@@ -113,7 +113,7 @@ try {
     $error_message = $ex->getMessage();
 	echo "<hr>error tokens : ".$error_message."<hr><br>";
 	if ($Box_IP) {		// transfert to domotic box
-		$http = $Box_url."currentTmp=Tokens!";
+		$http = $Box_url."currentTmp=Tokens";
 		curl ($http);
 		exit();
 	}
@@ -121,7 +121,7 @@ try {
     // Probably a temporary server-error
     echo "RuntimeException : ".$ex;
     if ($Box_IP) {		// transfert to domotic box
-		$http = $Box_url."currentTmp=RunTime!";
+		$http = $Box_url."currentTmp=RunTime";
 		curl ($http);
 		exit();
 	}
@@ -129,7 +129,7 @@ try {
     // Other errors; should not happen if it worked in the past
     echo "Other error : ".$ex;
     if ($Box_IP) {		// transfert to domotic box
-		$http = $Box_url."currentTmp=Exception!";
+		$http = $Box_url."currentTmp=Exception";
 		curl ($http);
 		exit();
 	}
